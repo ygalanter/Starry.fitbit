@@ -1,0 +1,15 @@
+{
+  "fitbit": {
+    "appUUID": "787417be-2bf8-4821-aa72-6db46ce0d5fb",
+    "appType": "clockface",
+    "appDisplayName": "Starry",
+    "iconFile": "resources/icon.png",
+    "wipeColor": "",
+    "requestedPermissions": [],
+    "i18n": {
+      "en": {
+        "name": "Starry"
+      }
+    }
+  }
+}
