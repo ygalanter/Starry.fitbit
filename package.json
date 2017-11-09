@@ -5,7 +5,9 @@
     "appDisplayName": "Starry",
     "iconFile": "resources/icon.png",
     "wipeColor": "",
-    "requestedPermissions": [],
+    "requestedPermissions": [
+      "access_activity"
+    ],
     "i18n": {
       "en": {
         "name": "Starry"

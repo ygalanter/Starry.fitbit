@@ -7,6 +7,7 @@ import * as fs from "fs";
 import { me } from "appbit";
 import {preferences} from "user-settings";
 import { battery } from "power";
+import { goals, today } from "user-activity";
 import dtlib from "../common/datetimelib"
 
 // trying to get user settings if saved before
@@ -14,7 +15,7 @@ let userSettings;
 try {
   userSettings = fs.readFileSync("user_settings.json", "json");
 } catch (e) {
-  userSettings = {starColor: "yellow", vacuumColor:"#000033"}
+  userSettings = {starColor: "white", vacuumColor:"black", showBattery: true, showActivity:"steps"}
 }
 
 // on app exit collect settings 
@@ -30,12 +31,40 @@ let solidBackground = document.getElementById("solidBackground");
 let imageBackground = document.getElementById("imageBackground");
 let batteryMoon = document.getElementById("batteryMoon");
 let batteryEarth = document.getElementById("batteryEarth");
+let activityPlanet = document.getElementById("activityPlanet");
+let activityOrbit = document.getElementById("activityOrbit");
+
+function updateActivity(activity) {
+  activityOrbit.sweepAngle = 360*today.local[activity]/goals[activity]
+}
+
+function showHideActivity(activity) {
+
+  if (activity == "disabled") {
+    activityPlanet.style.display = "none";
+    activityOrbit.style.display = "none";
+  } else {
+    activityPlanet.style.display = "inline";
+    activityOrbit.style.display = "inline";
+    updateActivity(activity);
+  }
+}
 
 function updateBattery(charge) {
   batteryEarth.cx = batteryMoon.cx + batteryMoon.r*2*charge/100;
 }
 
-
+function showHideBattery(toggle) {
+  if (toggle) {
+    batteryMoon.style.display = "inline";
+    batteryEarth.style.display = "inline";
+    updateBattery(Math.floor(battery.chargeLevel));
+  } else {
+    batteryMoon.style.display = "none";
+    batteryEarth.style.display = "none";    
+  }
+ 
+}
 
 function setStarColor(color) {
     h1img.style.fill = color;
@@ -44,6 +73,8 @@ function setStarColor(color) {
     m2img.style.fill = color;
     imageBackground.style.fill = color;
     batteryMoon.style.fill = color;
+    activityPlanet.style.fill = color;
+    activityOrbit.style.fill = color;
 }
 setStarColor(userSettings.starColor);
 
@@ -80,6 +111,8 @@ function updateClock() {
   h2img.href = `digits/${h2}.png`;
   m1img.href = `digits/${m1}.png`;
   m2img.href = `digits/${m2}.png`;
+  
+  if (userSettings.showActivity != "disabled") updateActivity(userSettings.showActivity);
 
 }
 
@@ -95,10 +128,16 @@ messaging.peerSocket.onmessage = evt => {
           userSettings.vacuumColor = evt.data.newValue.replace(/["']/g, "");
           setVacuumColor(userSettings.vacuumColor)
           break;
+    case "showBattery":
+          userSettings.showBattery = (evt.data.newValue == "true");
+          showHideBattery(userSettings.showBattery);
+          break;
+    case "showActivity":
+          userSettings.showActivity = JSON.parse(evt.data.newValue).values[0].value;
+          showHideActivity(userSettings.showActivity);
+          break;
   };
-  console.log(evt.data.key);
-  console.log(userSettings.vacuumColor);
-  
+ 
   updateClock(); // and refresh the clock
       
 }
@@ -120,5 +159,9 @@ updateClock();
 
 
 //battery
-updateBattery(Math.floor(battery.chargeLevel));
 battery.onchange = () => {updateBattery(Math.floor(battery.chargeLevel))};
+showHideBattery(userSettings.showBattery);
+
+//activity
+showHideActivity(userSettings.showActivity);
+console.log(userSettings.showActivity);

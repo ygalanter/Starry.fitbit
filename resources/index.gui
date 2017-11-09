@@ -11,5 +11,9 @@
    <circle id="batteryMoon" cx="302" cy="42" r="22"/>
    <circle id="batteryEarth" cx="302" cy="42" r="22"/>
   
+   
+   <circle id="activityPlanet" cx="55" cy="195" r="22"/>
+   <arc id= "activityOrbit" x="20" y="160" width="70" height="70" arc-width="4" start-angle="0" opacity="0.7" />
+  
  
 </svg>
