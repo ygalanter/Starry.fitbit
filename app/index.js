@@ -1,26 +1,19 @@
 // import libraries
 import clock from "clock";
 import document from "document";
-import {display} from "display";
-import * as messaging from "messaging";
-import * as fs from "fs";
-import { me } from "appbit";
-import {preferences} from "user-settings";
+import {preferences as user_settings} from "user-settings";
 import { battery } from "power";
 import { goals, today } from "user-activity";
+import { preferences } from "fitbit-preferences";
+import asap from "fitbit-asap/app";
 import dtlib from "../common/datetimelib"
 
 // trying to get user settings if saved before
-let userSettings;
-try {
-  userSettings = fs.readFileSync("user_settings.json", "json");
-} catch (e) {
-  userSettings = {starColor: "white", vacuumColor:"black", showBattery: true, showActivity:"steps"}
-}
-
-// on app exit collect settings 
-me.onunload = () => {
-  fs.writeFileSync("user_settings.json", userSettings, "json");
+if (!preferences.starColor) {
+  preferences.starColor = "white";
+  preferences.vacuumColor = "black";
+  preferences.showBattery = false;
+  preferences.showActivity = "disabled"
 }
 
 let h1img = document.getElementById("h1");
@@ -35,7 +28,8 @@ let activityPlanet = document.getElementById("activityPlanet");
 let activityOrbit = document.getElementById("activityOrbit");
 
 function updateActivity(activity) {
-  activityOrbit.sweepAngle = 360*today.local[activity]/goals[activity]
+  
+  activityOrbit.sweepAngle = 360* Math.min(today.adjusted[activity],goals[activity]) /goals[activity];
 }
 
 function showHideActivity(activity) {
@@ -76,16 +70,16 @@ function setStarColor(color) {
     activityPlanet.style.fill = color;
     activityOrbit.style.fill = color;
 }
-setStarColor(userSettings.starColor);
+setStarColor(preferences.starColor);
 
 function setVacuumColor(color) {
   solidBackground.style.fill = color;
   batteryEarth.style.fill = color;
 }
-setVacuumColor(userSettings.vacuumColor);
+setVacuumColor(preferences.vacuumColor);
 
 // get user time format preference
-dtlib.timeFormat = preferences.clockDisplay == "12h" ? 1: 0;
+dtlib.timeFormat = user_settings.clockDisplay == "12h" ? 1: 0;
 
 
 // Update the clock every minute
@@ -112,45 +106,41 @@ function updateClock() {
   m1img.href = `digits/${m1}.png`;
   m2img.href = `digits/${m2}.png`;
   
-  if (userSettings.showActivity != "disabled") updateActivity(userSettings.showActivity);
+  if (preferences.showActivity != "disabled") updateActivity(preferences.showActivity);
 
 }
 
 // Message is received
-messaging.peerSocket.onmessage = evt => {
+asap.onmessage = data => {
   
-  switch (evt.data.key) {
+  switch (data.key) {
     case "starColor": 
-          userSettings.starColor = evt.data.newValue.replace(/["']/g, "");
-          setStarColor(userSettings.starColor);
+          preferences.starColor = data.newValue.replace(/["']/g, "");
+          setStarColor(preferences.starColor);
           break;
     case "vacuumColor":
-          userSettings.vacuumColor = evt.data.newValue.replace(/["']/g, "");
-          setVacuumColor(userSettings.vacuumColor)
+          preferences.vacuumColor = data.newValue.replace(/["']/g, "");
+          setVacuumColor(preferences.vacuumColor)
           break;
     case "showBattery":
-          userSettings.showBattery = (evt.data.newValue == "true");
-          showHideBattery(userSettings.showBattery);
+          preferences.showBattery = (data.newValue == "true");
+          showHideBattery(preferences.showBattery);
           break;
     case "showActivity":
-          userSettings.showActivity = JSON.parse(evt.data.newValue).values[0].value;
-          showHideActivity(userSettings.showActivity);
+          let activity = JSON.parse(data.newValue).values[0].value;
+
+          if (activity === "elevationGain" && today.adjusted.elevationGain === undefined) {
+            activity = "disabled";
+          }
+
+          preferences.showActivity = activity;
+          showHideActivity(preferences.showActivity);
           break;
   };
  
   updateClock(); // and refresh the clock
       
 }
-
-// Message socket opens
-messaging.peerSocket.onopen = () => {
-  console.log("App Socket Open");
-};
-
-// Message socket closes
-messaging.peerSocket.close = () => {
-  console.log("App Socket Closed");
-};
 
 
 // Update the clock every tick event
@@ -160,8 +150,8 @@ updateClock();
 
 //battery
 battery.onchange = () => {updateBattery(Math.floor(battery.chargeLevel))};
-showHideBattery(userSettings.showBattery);
+showHideBattery(preferences.showBattery);
 
 //activity
-showHideActivity(userSettings.showActivity);
-console.log(userSettings.showActivity);
+showHideActivity(preferences.showActivity);
+console.log(preferences.showActivity);
