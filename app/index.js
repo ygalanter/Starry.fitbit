@@ -129,7 +129,7 @@ asap.onmessage = data => {
     case "showActivity":
           let activity = JSON.parse(data.newValue).values[0].value;
 
-          if (activity === "elevationGain" && today.adjusted.elevationGain === undefined) {
+          if (activity === "elevationGain" && today.local.elevationGain === undefined) {
             activity = "disabled";
           }
 
