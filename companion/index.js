@@ -1,8 +1,13 @@
-import asap from "fitbit-asap/companion";
+import { peerSocket } from "fitbit-file-messaging";
 import { settingsStorage } from "settings";
 
 console.log("Companion Started");
 
+setTimeout(() => {
+  if (settingsStorage.getItem('showBattery') === null) {
+    settingsStorage.setItem('showBattery', true)
+  }
+}, 100);
 
 // A user changes settings
 settingsStorage.onchange = evt => {
@@ -16,5 +21,5 @@ settingsStorage.onchange = evt => {
 
 // Send data to device using Messaging API
 function sendVal(data) {
-    asap.send(data);
+  peerSocket.send(data);
 }
